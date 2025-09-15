@@ -1,68 +1,74 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* 1) Semantyczne tokeny (Tailwind v4 je „widzi” i tworzy np. bg-background, text-foreground) */
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* Kolory UI */
+  --color-background: #0d0e12;
+  --color-surface: #12141b;
+  --color-overlay: #191c24;
+  --color-border: #2a2f3a;
+  --color-muted: #a6adbb;
+  --color-foreground: #e6e8ed;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+  /* Akcent/statusy */
+  --color-accent: #6366f1; /* indigo-500 */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  --radius-lg: 0.75rem;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* 2) Baza (typografia, kolory, focus) */
+@layer base {
+  html,
+  body {
+    height: 100%;
   }
-  a:hover {
-    color: #747bff;
+  body {
+    @apply font-sans bg-background text-foreground;
   }
-  button {
-    background-color: #f9f9f9;
+
+  :where(button, a, input, select, textarea) {
+    outline: none;
   }
+  :where(button, a, input, select, textarea):focus-visible {
+    /* widoczny, ale subtelny ring */
+    box-shadow: 0 0 0 2px
+      color-mix(in oklab, var(--color-accent) 40%, transparent);
+    border-color: var(--color-accent);
+  }
+
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 0.9;
+  }
+}
+
+/* 3) Własne utilsy – używamy @utility (v4) + @apply do składania klas Tailwinda */
+@utility card {
+  @apply rounded-2xl border border-border bg-surface/95 shadow-xl;
+}
+@utility btn-primary {
+  @apply rounded-lg bg-accent text-white font-medium px-4 py-2.5 transition;
+}
+.btn-primary:hover {
+  opacity: 0.95;
+}
+.btn-primary:active {
+  opacity: 0.9;
+}
+
+@utility input {
+  @apply w-full rounded-lg bg-surface border border-border px-3 py-2 text-foreground placeholder:text-muted;
+}
+
+@utility nav-link {
+  @apply px-2 py-1 rounded-md transition-colors text-[0.95rem] text-zinc-200/90 hover:text-white;
+}
+@utility nav-link-active {
+  @apply bg-accent/15 text-white;
 }
