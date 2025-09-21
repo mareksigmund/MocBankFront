@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Accounts from "../pages/Accounts";
 import ProtectedRoute from "./ProtectedRoute";
+import Transactions from "../pages/Transactions";
 
 export const router = createBrowserRouter([
   {
@@ -12,13 +13,22 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Home /> },
-      { path: "login", element: <Login /> }, // ⟵ przeniesione do children
-      { path: "register", element: <Register /> }, // ⟵ przeniesione do children
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
       {
         path: "accounts",
         element: (
           <ProtectedRoute>
             <Accounts />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "accounts/:accountId/transactions",
+        element: (
+          <ProtectedRoute>
+            <Transactions />
           </ProtectedRoute>
         ),
       },
