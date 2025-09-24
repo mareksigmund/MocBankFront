@@ -25,7 +25,11 @@ export default function Navbar() {
       {/* Desktop bar */}
       <nav className="mx-auto w-full max-w-6xl h-14 px-4 sm:px-6 flex items-center gap-3">
         {/* Brand */}
-        <Link to="/" className="font-semibold leading-none">
+        <Link
+          to="/"
+          className="font-semibold leading-none"
+          aria-label="Strona główna"
+        >
           <span className="bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
             MockBank
           </span>
@@ -34,25 +38,25 @@ export default function Navbar() {
         {/* Links (desktop) */}
         <div className="hidden md:flex items-center gap-1">
           <NavLink to="/" className={link}>
-            Home
+            Strona główna
           </NavLink>
           {isLoggedIn && (
             <>
               <NavLink to="/accounts" className={link}>
-                Accounts
+                Konta
               </NavLink>
               <NavLink to="/webhooks" className={link}>
-                Webhooks
-              </NavLink>{" "}
+                Webhooki
+              </NavLink>
             </>
           )}
           {!isLoggedIn && (
             <>
               <NavLink to="/login" className={link}>
-                Login
+                Zaloguj
               </NavLink>
               <NavLink to="/register" className={link}>
-                Register
+                Rejestracja
               </NavLink>
             </>
           )}
@@ -74,8 +78,13 @@ export default function Navbar() {
             aria-controls="mobile-menu"
             onClick={() => setOpen((v) => !v)}
           >
-            {/* prosty ikonograf (3 paski) */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden
+            >
               <path
                 d="M4 7h16M4 12h16M4 17h16"
                 stroke="currentColor"
@@ -95,26 +104,25 @@ export default function Navbar() {
         >
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-3 flex flex-col gap-1">
             <NavLink to="/" className={link} onClick={closeMenu}>
-              Home
+              Strona główna
             </NavLink>
             {isLoggedIn && (
               <>
                 <NavLink to="/accounts" className={link} onClick={closeMenu}>
-                  Accounts
+                  Konta
                 </NavLink>
                 <NavLink to="/webhooks" className={link} onClick={closeMenu}>
-                  Webhooks
-                </NavLink>{" "}
-                {/* ⬅️ DODAJ */}
+                  Webhooki
+                </NavLink>
               </>
             )}
             {!isLoggedIn && (
               <>
                 <NavLink to="/login" className={link} onClick={closeMenu}>
-                  Login
+                  Zaloguj
                 </NavLink>
                 <NavLink to="/register" className={link} onClick={closeMenu}>
-                  Register
+                  Rejestracja
                 </NavLink>
               </>
             )}

@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import { extractApiMessages } from "../lib/errors";
+import { useTitle } from "../lib/title";
 
 const RegisterSchema = z.object({
   email: z.string().email({ message: "Podaj poprawny adres e-mail" }),
@@ -21,6 +22,8 @@ type RegisterResponse = {
 };
 
 export default function Register() {
+  useTitle("Rejestracja");
+
   const navigate = useNavigate();
   const [form, setForm] = useState<RegisterInput>({
     email: "",

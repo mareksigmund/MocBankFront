@@ -13,6 +13,7 @@ type Props = {
   accountId: string;
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 };
 
 type Txn = {
@@ -122,6 +123,7 @@ export default function SimulateTransactionModal({
   accountId,
   open,
   onClose,
+  onSuccess,
 }: Props) {
   const qc = useQueryClient();
 
@@ -164,7 +166,9 @@ export default function SimulateTransactionModal({
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["transactions"] }),
         qc.invalidateQueries({ queryKey: ["accounts"] }),
+        qc.invalidateQueries({ queryKey: ["recentTxns"] }),
       ]);
+      onSuccess?.();
       onClose();
       // reset delikatny
       setMode("preset");

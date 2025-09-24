@@ -6,6 +6,7 @@ import { isAxiosError } from "axios";
 import { api } from "../lib/api";
 import { formatPLN } from "../lib/money";
 import SimulateTransactionModal from "../components/SimulateTransactionModal";
+import { useTitle } from "../lib/title";
 
 // ---- Typy ----
 type Txn = {
@@ -110,6 +111,8 @@ function downloadCsvCurrentPage(accountId: string, items: Txn[]) {
 }
 
 export default function Transactions() {
+  useTitle("Transakcje");
+
   const { accountId } = useParams<{ accountId: string }>();
   const [params, setParams] = useSearchParams();
 

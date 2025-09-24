@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 import { api } from "../lib/api";
 import { extractApiMessages } from "../lib/errors";
+import { useTitle } from "../lib/title";
 
 type Webhook = {
   id: string;
@@ -32,6 +33,8 @@ const CreateSchema = z.object({
 type CreateInput = z.infer<typeof CreateSchema>;
 
 export default function Webhooks() {
+  useTitle("Webhooki");
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CreateInput>({

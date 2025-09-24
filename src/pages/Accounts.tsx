@@ -7,6 +7,7 @@ import { isAxiosError } from "axios";
 import { api } from "../lib/api";
 import { formatPLN } from "../lib/money";
 import CreateAccountForm from "../components/CreateAccountForm";
+import { useTitle } from "../lib/title";
 
 type Account = {
   id: string;
@@ -28,6 +29,8 @@ function isNonEmptyString(x: unknown): x is string {
 }
 
 export default function Accounts() {
+  useTitle("Konta");
+
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({

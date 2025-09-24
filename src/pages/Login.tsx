@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { authStore, type LoginResponse } from "../lib/auth";
 import { extractApiMessages } from "../lib/errors";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTitle } from "../lib/title";
 
 const LoginSchema = z.object({
   email: z.string().email({ message: "Podaj poprawny adres e-mail" }),
@@ -14,6 +15,8 @@ const LoginSchema = z.object({
 type LoginInput = z.infer<typeof LoginSchema>;
 
 export default function Login() {
+  useTitle("Logowanie");
+
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const fromParam = params.get("from") || "/";
