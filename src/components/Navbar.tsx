@@ -37,9 +37,14 @@ export default function Navbar() {
             Home
           </NavLink>
           {isLoggedIn && (
-            <NavLink to="/accounts" className={link}>
-              Accounts
-            </NavLink>
+            <>
+              <NavLink to="/accounts" className={link}>
+                Accounts
+              </NavLink>
+              <NavLink to="/webhooks" className={link}>
+                Webhooks
+              </NavLink>{" "}
+            </>
           )}
           {!isLoggedIn && (
             <>
@@ -93,9 +98,15 @@ export default function Navbar() {
               Home
             </NavLink>
             {isLoggedIn && (
-              <NavLink to="/accounts" className={link} onClick={closeMenu}>
-                Accounts
-              </NavLink>
+              <>
+                <NavLink to="/accounts" className={link} onClick={closeMenu}>
+                  Accounts
+                </NavLink>
+                <NavLink to="/webhooks" className={link} onClick={closeMenu}>
+                  Webhooks
+                </NavLink>{" "}
+                {/* ⬅️ DODAJ */}
+              </>
             )}
             {!isLoggedIn && (
               <>

@@ -6,6 +6,7 @@ import Register from "../pages/Register";
 import Accounts from "../pages/Accounts";
 import ProtectedRoute from "./ProtectedRoute";
 import Transactions from "../pages/Transactions";
+import Webhooks from "../pages/Webhooks";
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,15 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Transactions />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "webhooks",
+        element: (
+          <ProtectedRoute>
+            <Webhooks />
           </ProtectedRoute>
         ),
       },
