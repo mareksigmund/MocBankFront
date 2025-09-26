@@ -1,4 +1,3 @@
-// src/pages/Accounts.tsx
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -6,8 +5,9 @@ import { isAxiosError } from "axios";
 
 import { api } from "../lib/api";
 import { formatPLN } from "../lib/money";
-import CreateAccountForm from "../components/CreateAccountForm";
 import { useTitle } from "../lib/title";
+import CreateAccountForm from "../components/CreateAccountForm";
+import InternalTransferModal from "../components/InternalTransferModal";
 
 type Account = {
   id: string;
@@ -33,6 +33,12 @@ export default function Accounts() {
 
   const [createOpen, setCreateOpen] = useState(false);
 
+  // modal przelewu
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferDefaultFrom, setTransferDefaultFrom] = useState<string | null>(
+    null
+  );
+
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["accounts"],
     queryFn: async () => {
@@ -46,12 +52,17 @@ export default function Accounts() {
     return (
       <section className="space-y-6">
         <div className="flex items-baseline justify-between gap-3">
-          {/* podczas ładowania pokazujemy tytuł */}
           <h2 className="text-2xl font-semibold">Twoje konta</h2>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted">Ładowanie…</span>
             <button className="btn-primary" disabled>
               Utwórz konto
+            </button>
+            <button
+              className="rounded-lg border border-border px-4 py-2.5"
+              disabled
+            >
+              Przelew
             </button>
           </div>
         </div>
@@ -89,11 +100,9 @@ export default function Accounts() {
     return (
       <section className="space-y-6">
         <div className="flex items-baseline justify-between gap-3">
-          {/* gdy panel otwarty – tytuł znika, w przeciwnym razie jest widoczny */}
           {!createOpen ? (
             <h2 className="text-2xl font-semibold">Twoje konta</h2>
           ) : (
-            // placeholder utrzymuje wysokość wiersza, żeby UI nie "skakał"
             <div aria-hidden className="h-8" />
           )}
           <div className="flex items-center gap-2">
@@ -104,6 +113,12 @@ export default function Accounts() {
               aria-controls="create-account-panel"
             >
               {createOpen ? "Zamknij" : "Utwórz konto"}
+            </button>
+            <button
+              className="rounded-lg border border-border px-4 py-2.5"
+              disabled
+            >
+              Przelew
             </button>
           </div>
         </div>
@@ -127,6 +142,7 @@ export default function Accounts() {
 
   // ---------- DATA ----------
   const accounts = data ?? [];
+  const canTransfer = accounts.length >= 2;
 
   return (
     <section className="space-y-6">
@@ -151,6 +167,7 @@ export default function Accounts() {
 
         <div className="flex items-center gap-2">
           {isFetching && <span className="text-sm text-muted">Odświeżam…</span>}
+
           <button
             className="btn-primary"
             onClick={() => setCreateOpen((v) => !v)}
@@ -158,6 +175,18 @@ export default function Accounts() {
             aria-controls="create-account-panel"
           >
             {createOpen ? "Zamknij" : "Utwórz konto"}
+          </button>
+
+          <button
+            className="rounded-lg border border-border px-4 py-2.5"
+            onClick={() => {
+              setTransferDefaultFrom(null); // modal sam wybierze pierwsze konto jako źródło
+              setTransferOpen(true);
+            }}
+            disabled={!canTransfer}
+            title={!canTransfer ? "Potrzebne co najmniej 2 konta" : undefined}
+          >
+            Przelew
           </button>
         </div>
       </div>
@@ -195,16 +224,34 @@ export default function Accounts() {
                 <p className="text-xs text-muted">
                   Utworzone: {new Date(a.createdAt).toLocaleString("pl-PL")}
                 </p>
-                <Link
-                  to={`/accounts/${a.id}/transactions`}
-                  className="text-accent text-sm hover:underline"
-                >
-                  Transakcje →
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={`/accounts/${a.id}`}
+                    className="text-accent text-sm hover:underline"
+                  >
+                    Szczegóły →
+                  </Link>
+                  <Link
+                    to={`/accounts/${a.id}/transactions`}
+                    className="text-accent text-sm hover:underline"
+                  >
+                    Transakcje →
+                  </Link>
+                </div>
               </footer>
             </article>
           ))}
         </div>
+      )}
+
+      {/* Modal przelewu między własnymi kontami */}
+      {transferOpen && (
+        <InternalTransferModal
+          open={transferOpen}
+          onClose={() => setTransferOpen(false)}
+          defaultFromId={transferDefaultFrom}
+          // onSuccess nie jest konieczny – modal sam invaliduje queries
+        />
       )}
     </section>
   );

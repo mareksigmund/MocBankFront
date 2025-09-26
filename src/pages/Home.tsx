@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { isAxiosError } from "axios";
-
+import { authStore } from "../lib/auth";
 import { api } from "../lib/api";
 import { formatPLN } from "../lib/money";
 import { useTitle } from "../lib/title";
@@ -41,6 +41,9 @@ type TxnList = {
   total: number;
   pages: number;
 };
+type ApiErrorBody = {
+  message?: string | string[];
+};
 
 type RecentTxn = Txn & { accountName: string };
 
@@ -50,6 +53,15 @@ export default function Home() {
   const token = localStorage.getItem("mb_access");
   const isLoggedIn = !!token;
   const qc = useQueryClient();
+
+  const greetingName = useMemo(() => {
+    const full = authStore.user?.fullName?.trim();
+    const email = authStore.user?.email?.trim();
+    // pierwszy człon imienia, inaczej e-mail, inaczej „Użytkowniku”
+    const base = full && full.length > 0 ? full : email || "Użytkowniku";
+    const first = base.split(/\s+/)[0];
+    return first || "Użytkowniku";
+  }, []);
 
   // 1) Konta
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery<
@@ -81,39 +93,24 @@ export default function Home() {
     if (!selectedId && accounts.length) setSelectedId(accounts[0].id);
   }, [accounts, selectedId]);
 
-  // 3) „Ostatnie transakcje” – zbieramy z maksymalnie 3 kont (po 5 szt.), łączymy i bierzemy top 5
-  const accountIds = useMemo(() => accounts.map((a) => a.id), [accounts]);
+  const selectedAcc = useMemo(
+    () => accounts.find((a) => a.id === selectedId),
+    [accounts, selectedId]
+  );
 
+  // 3) „Ostatnie transakcje” – teraz tylko dla WYBRANEGO konta
   const recentQuery = useQuery<RecentTxn[]>({
-    queryKey: ["recentTxns", accountIds],
-    enabled: isLoggedIn && accountIds.length > 0,
+    queryKey: ["recentTxns", selectedId],
+    enabled: isLoggedIn && !!selectedId,
     queryFn: async () => {
-      const maxAccounts = 3;
-      const ids = accountIds.slice(0, maxAccounts);
-
-      const responses = await Promise.all(
-        ids.map((id) =>
-          api.get<TxnList>(`/v1/accounts/${id}/transactions`, {
-            params: { page: 1, limit: 5 },
-          })
-        )
+      const res = await api.get<TxnList>(
+        `/v1/accounts/${selectedId}/transactions`,
+        {
+          params: { page: 1, limit: 5 },
+        }
       );
-
-      let all: RecentTxn[] = [];
-      for (let i = 0; i < responses.length; i++) {
-        const id = ids[i];
-        const accName = accounts.find((a) => a.id === id)?.name ?? "";
-        const items = responses[i].data.items.map((t) => ({
-          ...t,
-          accountName: accName,
-        }));
-        all = all.concat(items);
-      }
-
-      all.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      return all.slice(0, 5);
+      const accName = selectedAcc?.name ?? "";
+      return res.data.items.map((t) => ({ ...t, accountName: accName }));
     },
     placeholderData: [],
   });
@@ -158,9 +155,6 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
             Pulpit
           </h2>
-          <Link to="/accounts" className="btn-primary">
-            Przejdź do kont
-          </Link>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -186,10 +180,17 @@ export default function Home() {
 
   if (isError) {
     let msg = "Nie udało się pobrać kont.";
+
     if (isAxiosError(error)) {
-      const m = error.response?.data?.message;
-      if (typeof m === "string") msg = m;
-      if (Array.isArray(m) && m.length) msg = m.join("\n");
+      const m = (error.response?.data as ApiErrorBody | undefined)?.message;
+
+      if (typeof m === "string") {
+        msg = m;
+      } else if (Array.isArray(m)) {
+        // jeśli backend potrafi zwrócić tablicę komunikatów
+        msg =
+          m.filter((t): t is string => typeof t === "string").join("\n") || msg;
+      }
     }
     return (
       <section className="space-y-4">
@@ -212,15 +213,12 @@ export default function Home() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-            Pulpit
+            Witaj, {greetingName}
           </h2>
-          {isFetching && <p className="text-sm text-muted mt-1">Odświeżam…</p>}
+          <p className="text-sm text-muted mt-1">Pulpit</p>
+          {isFetching && <p className="text-sm text-muted">Odświeżam…</p>}
         </div>
-        <div className="flex items-center gap-2">
-          <Link to="/accounts" className="btn-primary">
-            Przejdź do kont
-          </Link>
-        </div>
+        {/* górny przycisk był duplikatem – usuwamy go, zarządzanie kontami jest niżej */}
       </header>
 
       {/* Kafelki podsumowań */}
@@ -246,13 +244,15 @@ export default function Home() {
 
       {/* Szybkie akcje */}
       <div className="card p-4">
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="grid gap-4 md:grid-cols-[minmax(260px,420px)_auto_auto] md:items-end">
+          {/* Pole wyboru konta */}
           <div className="space-y-1.5">
             <label className="text-sm text-muted">Konto do transakcji</label>
             <select
-              className="input w-64"
+              className="input w-full md:w-[28rem]"
               value={selectedId ?? ""}
               onChange={(e) => setSelectedId(e.target.value || null)}
+              aria-label="Wybierz konto do transakcji"
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -261,26 +261,40 @@ export default function Home() {
               ))}
             </select>
           </div>
-          <button
-            className="btn-primary"
-            disabled={!selectedId}
-            onClick={() => setModalOpen(true)}
-          >
-            + Dodaj transakcję
-          </button>
 
-          <Link
-            to="/accounts"
-            className="rounded-lg border border-border px-4 py-2.5"
-          >
-            Zarządzaj kontami
-          </Link>
+          {/* Dodaj transakcję */}
+          <div className="flex md:justify-end">
+            <button
+              className="btn-primary w-full md:w-auto"
+              disabled={!selectedId}
+              onClick={() => setModalOpen(true)}
+            >
+              + Dodaj transakcję
+            </button>
+          </div>
+
+          {/* Zarządzaj kontami */}
+          <div className="flex md:justify-end md:ml-auto">
+            <Link
+              to="/accounts"
+              className="rounded-lg border border-border px-4 py-2.5 w-full md:w-auto text-center"
+            >
+              Zarządzaj kontami
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Ostatnie transakcje */}
+      {/* Ostatnie transakcje (dla wybranego konta) */}
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Ostatnie transakcje</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">Ostatnie transakcje</h3>
+          {selectedAcc && (
+            <span className="text-xs rounded-full border border-border px-2 py-0.5 text-muted">
+              {selectedAcc.name}
+            </span>
+          )}
+        </div>
 
         {recentQuery.isLoading ? (
           <div className="card p-4">
@@ -348,7 +362,7 @@ export default function Home() {
           accountId={selectedId}
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          onSuccess={handleTxnAdded} // odświeżenie po dodaniu
+          onSuccess={handleTxnAdded}
         />
       )}
     </section>
