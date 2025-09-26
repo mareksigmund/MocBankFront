@@ -185,8 +185,7 @@ export default function Home() {
           MockBank UI
         </h2>
         <p className="text-muted">
-          To jest strona startowa. Zaloguj się, aby zobaczyć pulpit z
-          podsumowaniem kont.
+          To jest strona startowa. Zaloguj się, aby skorzystać z aplikacji.
         </p>
         <div className="flex items-center gap-2">
           <Link to="/login" className="btn-primary">
