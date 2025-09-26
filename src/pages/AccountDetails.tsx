@@ -1,3 +1,4 @@
+// src/pages/AccountDetails.tsx
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import SimulateTransactionModal from "../components/SimulateTransactionModal";
 import InternalTransferModal from "../components/InternalTransferModal";
 import ConfirmCloseAccountModal from "../components/ConfirmCloseAccountModal";
 import { closeAccount } from "../lib/accounts";
+import AccountQuickStats from "../components/AccountQuickStats";
 
 type Account = {
   id: string;
@@ -17,7 +19,7 @@ type Account = {
   name: string;
   iban: string;
   currency: "PLN";
-  balance: number; // grosze
+  balance: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -26,9 +28,7 @@ type ApiErrorBody = { message?: string | string[] };
 
 export default function AccountDetails() {
   const { accountId = "" } = useParams();
-  useTitle("Szczegóły konta");
 
-  // Pobieramy listę kont i wybieramy jedno (API nie ma GET /accounts/:id)
   const q = useQuery<Account[]>({
     queryKey: ["accounts"],
     queryFn: async () => {
@@ -42,16 +42,15 @@ export default function AccountDetails() {
     [q.data, accountId]
   );
 
-  // Modale akcji
+  useTitle(account ? `Konto: ${account.name}` : "Szczegóły konta");
+
   const [simOpen, setSimOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
 
-  // Stan zamykania konta
   const [closeSubmitting, setCloseSubmitting] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
 
-  // LOADING
   if (q.isLoading) {
     return (
       <section className="space-y-6">
@@ -64,7 +63,6 @@ export default function AccountDetails() {
             ← Wróć do kont
           </Link>
         </div>
-
         <div className="card p-4">
           <div className="h-6 w-1/3 rounded bg-overlay mb-3" />
           <div className="h-5 w-1/4 rounded bg-overlay" />
@@ -74,7 +72,6 @@ export default function AccountDetails() {
     );
   }
 
-  // ERROR
   if (q.isError) {
     let msg = "Nie udało się pobrać danych konta.";
     if (isAxiosError(q.error)) {
@@ -100,7 +97,6 @@ export default function AccountDetails() {
     );
   }
 
-  // brak konta
   if (!account) {
     return (
       <section className="space-y-4">
@@ -118,10 +114,9 @@ export default function AccountDetails() {
     );
   }
 
-  // ⬇️ TS: po powyższym guardzie traktujemy acc jako nie-undefined
   const acc: Account = account;
+  const canClose = acc.balance === 0;
 
-  // Handler zamykania konta (wywoływany przez modal)
   async function handleCloseConfirm(data: {
     password: string;
     nameConfirm: string;
@@ -131,10 +126,10 @@ export default function AccountDetails() {
     try {
       await closeAccount(acc.id, {
         password: data.password,
-        confirmName: data.nameConfirm, // dopasowanie klucza do kontraktu API
+        confirmName: data.nameConfirm,
       });
       setCloseOpen(false);
-      await q.refetch(); // odśwież dane (konto zniknie z listy, saldo itd.)
+      await q.refetch();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         const s = err.response?.status ?? 0;
@@ -166,8 +161,7 @@ export default function AccountDetails() {
             {acc.name}
           </h2>
           <p className="text-sm text-muted mt-1">
-            IBAN:&nbsp;
-            <span className="font-mono">{acc.iban}</span>
+            IBAN:&nbsp;<span className="font-mono">{acc.iban}</span>
           </p>
         </div>
 
@@ -202,6 +196,7 @@ export default function AccountDetails() {
             >
               Transakcje
             </Link>
+
             <button
               className="rounded-lg border border-border px-4 py-2.5"
               onClick={() => setTransferOpen(true)}
@@ -209,12 +204,24 @@ export default function AccountDetails() {
             >
               Przelew
             </button>
+
             <button className="btn-primary" onClick={() => setSimOpen(true)}>
               Symuluj transakcję
             </button>
+
             <button
-              className="rounded-lg border border-danger/50 text-danger px-4 py-2.5"
+              className={`rounded-lg border px-4 py-2.5 ${
+                canClose
+                  ? "border-danger/50 text-danger"
+                  : "border-border text-muted"
+              }`}
               onClick={() => setCloseOpen(true)}
+              disabled={!canClose}
+              title={
+                canClose
+                  ? "Zamknij konto"
+                  : "Saldo musi wynosić 0, aby zamknąć konto"
+              }
             >
               Zamknij konto
             </button>
@@ -232,18 +239,17 @@ export default function AccountDetails() {
         )}
       </div>
 
+      {/* ⬇️ Statystyki konta – WPROST w szczegółach, bez klikania */}
+      <AccountQuickStats accountId={acc.id} />
+
       {/* Modale */}
       {simOpen && (
         <SimulateTransactionModal
           accountId={acc.id}
           open={simOpen}
           onClose={() => setSimOpen(false)}
-          onSuccess={() => {
-            /* listy odświeżają się w modalu */
-          }}
         />
       )}
-
       {transferOpen && (
         <InternalTransferModal
           open={transferOpen}
@@ -251,7 +257,6 @@ export default function AccountDetails() {
           defaultFromId={acc.id}
         />
       )}
-
       {closeOpen && (
         <ConfirmCloseAccountModal
           open={closeOpen}

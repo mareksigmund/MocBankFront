@@ -8,6 +8,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Transactions from "../pages/Transactions";
 import Webhooks from "../pages/Webhooks";
 import AccountDetails from "../pages/AccountDetails";
+import AccountStats from "../pages/AccountStats";
 
 export const router = createBrowserRouter([
   {
@@ -58,6 +59,15 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Transactions />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "accounts/:accountId/stats",
+        element: (
+          <ProtectedRoute>
+            <AccountStats />
           </ProtectedRoute>
         ),
       },
